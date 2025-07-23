@@ -19,10 +19,16 @@ from mcp.validator import validate_input_against_schema, validate_output_against
 import json  # For JSON serialization/deserialization
 import os  # For file path operations
 from core.agent_registry import AGENT_PIPELINES  # Central registry for all agent pipelines
+import asyncio  # For running asynchronous tasks
+from my_SemanticKernel.my_sk_orchestrator import SemanticKernelOrchestrator
 
 # === Flask App Initialization ===
 # This creates the Flask application instance, which will handle all incoming HTTP requests.
 app = Flask(__name__)
+
+
+#Initialize SK orchestrator 
+sk_orchestrator = SemanticKernelOrchestrator()
 
 # === Health Check Endpoint ===
 @app.route("/", methods=["GET"])
@@ -97,6 +103,48 @@ def run_smart_controller():
         # Print the full traceback to the server logs for debugging
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+
+
+## Semantic Kernel Endpoints
+@app.route("/run-sk-smart-controller", methods=["POST"])
+def run_sk_smart_controller():
+    try:
+        # Handle case where request.json is None
+        requirements = []
+        if request.json and "requirements" in request.json:
+            requirements = request.json["requirements"]
+        
+        print(f"Processing requirements: {requirements}")
+        
+        #Run async orchestrator
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(sk_orchestrator.run_smart_analysis(requirements))
+        loop.close()
+
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/run-sk-credit-analysis", methods=["POST"])
+def run_sk_credit_analysis():
+    """Full credit analysis using SK orchestration."""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            sk_orchestrator.run_credit_analysis()
+        )
+        loop.close()
+        
+        return jsonify({"analysis": result}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # === Main Entrypoint ===
 # This block runs the Flask app when the script is executed directly.
