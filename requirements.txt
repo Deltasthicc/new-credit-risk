@@ -15,3 +15,6 @@ requests
 azure-ai-agents
 azure-ai-projects
 gunicorn
+asyncio
+semantic-kernel
+json 
