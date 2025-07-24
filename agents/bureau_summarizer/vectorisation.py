@@ -142,7 +142,7 @@ for blob in blobs:
 search_client = SearchClient(endpoint=AZURE_SEARCH_ENDPOINT, index_name=INDEX_NAME, credential=AzureKeyCredential(AZURE_SEARCH_KEY))
 result = search_client.upload_documents(documents)
 
-print(f"\n📤 Upload result:" {result})
+print(f"\n📤 Upload result:")
 for item in result:
     if item.succeeded:
         print(f"✅ {item.key}")

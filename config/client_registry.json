@@ -1,0 +1,14 @@
+{
+  "client123": {
+    "fraud_agent_url": "https://api.client123.com/fraud-evaluator",
+    "credit_agent_url": "https://api.client123.com/credit-score"
+  },
+  "client456": {
+    "fraud_agent_url": "https://fraud.client456.io/v1/predict"
+  },
+  "default": {},
+  "client_test": {
+    "fraud_agent_url": "http://localhost:5055/fraud-evaluator",
+    "credit_agent_url": "http://localhost:5055/credit-score"
+  }
+}
