@@ -1,4 +1,5 @@
 flask
+jsonschema
 azure-storage-blob
 azure-identity
 openai
@@ -17,4 +18,4 @@ azure-ai-projects
 gunicorn
 asyncio
 semantic-kernel
-json 
+json

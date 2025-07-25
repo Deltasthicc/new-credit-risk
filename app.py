@@ -5,7 +5,6 @@
 # explainability, and a smart controller that orchestrates all the tools.
 # It also supports Model Context Protocol (MCP) for schema-based validation of agent inputs/outputs.
 
-<<<<<<< HEAD
 from flask import Flask, request, jsonify  # Flask web framework for HTTP APIs
 from core.bureau_pipeline import bureau_agent_pipeline  # Agent to summarize credit bureau data
 from core.credit_pipeline import credit_scoring_pipeline  # Agent to calculate credit score
@@ -27,7 +26,6 @@ from utils.external_mcp_utils import (
     transform_external_output,
     format_external_summary
 )
-=======
 from flask import Flask, request, jsonify  # Flask web framework for API endpoints
 from core.bureau_pipeline import bureau_agent_pipeline  # Bureau summary pipeline
 from core.credit_pipeline import credit_scoring_pipeline  # Credit scoring pipeline
@@ -43,7 +41,6 @@ import os  # For file path operations
 from core.agent_registry import AGENT_PIPELINES  # Central registry for all agent pipelines
 import asyncio  # For running asynchronous tasks
 from my_SemanticKernel.my_sk_orchestrator import SemanticKernelOrchestrator
->>>>>>> 04aff6f12177b60313af99738de0c7fb554ecc3c
 
 # === Flask App Initialization ===
 app = Flask(__name__)
@@ -168,7 +165,6 @@ def run_smart_controller():
         return jsonify({"error": str(e)}), 500
 
 
-<<<<<<< HEAD
 # === MCP-Compliant Dynamic Agent Endpoint ===
 @app.route("/run-agent/<agent_name>", methods=["POST"])
 def run_agent(agent_name):
@@ -270,7 +266,7 @@ def run_all_agents():
         return jsonify({"error": str(e)}), 500
 
 # === Flask Entrypoint ===
-=======
+
 
 
 ## Semantic Kernel Endpoints
@@ -315,7 +311,6 @@ def run_sk_credit_analysis():
 # === Main Entrypoint ===
 # This block runs the Flask app when the script is executed directly.
 # The app listens on all interfaces (0.0.0.0) at port 5000.
->>>>>>> 04aff6f12177b60313af99738de0c7fb554ecc3c
 if __name__ == "__main__":
     # Launch the app on all available IPs, port 5000
     app.run(host="0.0.0.0", port=5000, debug=False)

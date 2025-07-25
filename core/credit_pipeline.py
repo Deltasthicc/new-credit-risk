@@ -124,13 +124,20 @@ def credit_scoring_pipeline(summary: str) -> dict:
     # -------------------------------------
     # Return Final Structured Response
     # -------------------------------------
+    risk_factors_raw = data.get("risk_factors", [])
+    risk_factors_str = (
+        ", ".join(risk_factors_raw)
+        if isinstance(risk_factors_raw, list)
+        else str(risk_factors_raw)
+    )
+
     return {
         "agentName": "Credit Score Rating",
         "agentDescription": "Calculates credit risk and assigns AAA–DDD rating",
         "extractedData": {
             "credit_score": data.get("credit_score", "Unknown"),
             "probability_of_default": safe_float(data.get("probability_of_default")),
-            "risk_factors": data.get("risk_factors", []),
+            "risk_factors": risk_factors_str,
             "financial_strength_score": safe_float(data.get("financial_strength_score")),
             "market_position_score": safe_float(data.get("market_position_score"))
         },

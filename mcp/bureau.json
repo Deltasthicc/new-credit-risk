@@ -4,7 +4,10 @@
   "input_schema": {
     "type": "object",
     "properties": {
-      "summary": { "type": "string", "description": "Raw text summary from RAG engine" }
+      "summary": {
+        "type": "string",
+        "description": "Raw text summary from RAG engine"
+      }
     },
     "required": ["summary"]
   },

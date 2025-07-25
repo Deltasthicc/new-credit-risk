@@ -7,6 +7,7 @@ import json                  # For parsing JSON-formatted responses
 from azure.identity import DefaultAzureCredential  # Azure authentication
 from azure.ai.projects import AIProjectClient       # Main entry to interact with Azure AI project
 from azure.ai.agents.models import ListSortOrder    # Sort messages when reading agent replies
+from datetime import datetime              # For timestamping the output
 
 # =====================================
 # Azure AI Project Initialization
@@ -89,8 +90,23 @@ def compliance_agent_pipeline(summary_text: str) -> dict:
         if content.startswith("```json"):
             content = content.strip("```json").strip("`").strip()
 
-        # Return parsed JSON output
-        return json.loads(content)
+        # Parse the LLM's raw JSON reply
+        parsed = json.loads(content)
+
+        return {
+            "agentName": "Compliance",
+            "agentDescription": "Detects legal, regulatory, and documentation compliance issues",
+            "completedAt": datetime.utcnow().isoformat() + "Z",
+            "confidenceScore": 0.91,
+            "status": "AgentStatus.complete",
+            "summary": summary_text.strip(),
+            "extractedData": {
+                "compliance_issues": parsed.get("compliance_issues", ""),
+                "risk_level": parsed.get("risk_level", ""),
+                "recommendations": parsed.get("recommendations", "")
+            },
+            "errorMessage": None
+        }
 
     except Exception as e:
         # Fallback in case parsing fails or agent misbehaves

@@ -25,7 +25,7 @@ from core.explainability_pipeline import explainability_agent_pipeline  # SHAP/L
 
 AGENT_PIPELINES = {
     "bureau": bureau_agent_pipeline,
-    "credit": credit_scoring_pipeline,
+    "credit_scoring": credit_scoring_pipeline,
     "fraud": fraud_detection_pipeline,
     "compliance": compliance_agent_pipeline,
     "explainability": explainability_agent_pipeline,

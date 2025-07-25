@@ -2,20 +2,19 @@
 # Bureau Summariser Agent Pipeline
 # =====================================
 
-import os
-import re
-import io
-import json
-import requests
-import pandas as pd
-from docx import Document
-from datetime import datetime
+import os # For file and path operations
+import re # For regular expression operations
+import io  # For handling in-memory byte streams
+import json # For JSON handling
+import requests # For making HTTP requests
+import pandas as pd # For handling Excel files
+from docx import Document # For reading Word documents
+from datetime import datetime # For timestamping outputs
 from sentence_transformers import SentenceTransformer  # (Optional - reserved for embedding)
 from azure.storage.blob import BlobServiceClient       # For reading document from Azure Blob
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import ListSortOrder
-
 # =====================================
 # Global Configuration (Sensitive values should be moved to environment vars in production)
 # =====================================
@@ -167,7 +166,7 @@ def extract_fields(text):
 # Main Bureau Agent Orchestration
 # =====================================
 
-def bureau_agent_pipeline():
+def bureau_agent_pipeline(summary: str = None):
     """
     Reads structured data from summary2.json and builds a consistent output object for downstream agents.
     """
@@ -181,10 +180,14 @@ def bureau_agent_pipeline():
         }
 
     try:
+        # --- Force annual_revenue to string to match schema ---
+        raw_revenue = bureau_output.get("annual_revenue")
+        annual_revenue_str = str(raw_revenue) if raw_revenue is not None else None
+
         fields = {
             "company_name": bureau_output.get("company_name"),
             "industry": bureau_output.get("industry"),
-            "annual_revenue": bureau_output.get("annual_revenue"),
+            "annual_revenue": annual_revenue_str,
             "employees": bureau_output.get("employees"),
             "years_in_business": bureau_output.get("years_in_business")
         }
@@ -211,9 +214,10 @@ def bureau_agent_pipeline():
 
     except Exception as e:
         return {
-            "errorMessage": f"Error parsing summary1.json content: {e}",
+            "errorMessage": f"Error parsing summary2.json content: {e}",
             "status": "AgentStatus.failed"
         }
+
 
 # =====================================
 # CLI Debug/Test Entry Point

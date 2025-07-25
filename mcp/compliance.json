@@ -1,5 +1,5 @@
 {
-  "agent": "compliance_agent",
+  "agent": "compliance",
   "description": "Checks regulatory compliance and flags risks",
   "input_schema": {
     "type": "object",
@@ -11,10 +11,32 @@
   "output_schema": {
     "type": "object",
     "properties": {
-      "risk_level": { "type": "string" },
-      "compliance_issues": { "type": "string" },
-      "recommendations": { "type": "string" }
+      "agentName": { "type": "string" },
+      "agentDescription": { "type": "string" },
+      "completedAt": { "type": "string", "format": "date-time" },
+      "confidenceScore": { "type": "number" },
+      "errorMessage": { "type": ["string", "null"] },
+      "status": { "type": "string" },
+      "summary": { "type": "string" },
+      "extractedData": {
+        "type": "object",
+        "properties": {
+          "risk_level": { "type": "string" },
+          "compliance_issues": { "type": "string" },
+          "recommendations": { "type": "string" }
+        },
+        "required": ["risk_level", "compliance_issues", "recommendations"]
+      }
     },
-    "required": ["risk_level", "compliance_issues", "recommendations"]
+    "required": [
+      "agentName",
+      "agentDescription",
+      "completedAt",
+      "confidenceScore",
+      "errorMessage",
+      "status",
+      "summary",
+      "extractedData"
+    ]
   }
 }
