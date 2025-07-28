@@ -4,11 +4,19 @@
 
 # Importing the main pipeline functions from each AI agent module
 # Each of these represents a key function of the credit risk & fraud detection system
-
+import os  # For file path operations
+import requests            # For making HTTP requests to external agents
 from core.credit_pipeline import credit_scoring_pipeline               # Generates credit risk score and limit recommendation
 from core.fraud_pipeline import fraud_detection_pipeline               # Detects potentially fraudulent behavior
 from core.explainability_pipeline import explainability_agent_pipeline # Explains AI decisions using techniques like SHAP
 from core.compliance_pipeline import compliance_agent_pipeline         # Validates decision against compliance/regulatory rules
+
+# ============================
+# MCP External Agent Endpoints
+# ============================
+
+EXTERNAL_FRAUD_AGENT_URL = os.getenv("EXTERNAL_FRAUD_AGENT_URL")
+EXTERNAL_CREDIT_AGENT_URL = os.getenv("EXTERNAL_CREDIT_AGENT_URL")
 
 # =======================
 # Tool Runner Functions
@@ -21,28 +29,52 @@ from core.compliance_pipeline import compliance_agent_pipeline         # Validat
 
 def run_credit_tool(summary_text: str) -> dict:
     """
-    Runs the Credit Scoring Agent.
+    Runs the Credit Scoring Agent, either external (if configured) or local.
 
     Parameters:
     - summary_text (str): Summarized customer or credit profile text.
 
     Returns:
-    - dict: Credit scoring results (e.g., PD score, recommended credit limit).
+    - dict: Credit scoring results.
     """
-    return credit_scoring_pipeline(summary_text)
+    if EXTERNAL_CREDIT_AGENT_URL:
+        print(f"🔗 Forwarding credit scoring to {EXTERNAL_CREDIT_AGENT_URL}")
+        try:
+            response = requests.post(EXTERNAL_CREDIT_AGENT_URL, json={"summary": summary_text}, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"⚠️ External credit agent failed: {e}. Falling back to local agent.")
+    return {
+        "agentName": "Credit Scoring",
+        "agentOrigin": "internal",
+        **credit_scoring_pipeline(summary_text)
+    }
 
 
 def run_fraud_tool(summary_text: str) -> dict:
     """
-    Runs the Fraud Detection Agent.
+    Runs the Fraud Detection Agent, either external (if configured) or local.
 
     Parameters:
     - summary_text (str): Summarized transaction or customer behavior text.
 
     Returns:
-    - dict: Fraud analysis results, including anomaly flags or risk probabilities.
+    - dict: Fraud analysis results.
     """
-    return fraud_detection_pipeline(summary_text)
+    if EXTERNAL_FRAUD_AGENT_URL:
+        print(f"🔗 Forwarding fraud detection to {EXTERNAL_FRAUD_AGENT_URL}")
+        try:
+            response = requests.post(EXTERNAL_FRAUD_AGENT_URL, json={"summary": summary_text}, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"⚠️ External fraud agent failed: {e}. Falling back to local agent.")
+    return {
+        "agentName": "Fraud Detection",
+        "agentOrigin": "internal",
+        **fraud_detection_pipeline(summary_text)
+    }
 
 
 def run_explainability_tool(summary_text: str) -> dict:
@@ -55,7 +87,11 @@ def run_explainability_tool(summary_text: str) -> dict:
     Returns:
     - dict: Explanation of the decision (e.g., feature contributions, SHAP values).
     """
-    return explainability_agent_pipeline(summary_text)
+    return {
+        "agentName": "Explainability",
+        "agentOrigin": "internal",
+        **explainability_agent_pipeline(summary_text)
+    }
 
 
 def run_compliance_tool(summary_text: str) -> dict:
@@ -68,4 +104,8 @@ def run_compliance_tool(summary_text: str) -> dict:
     Returns:
     - dict: Validation results against compliance rules or regulatory guidelines.
     """
-    return compliance_agent_pipeline(summary_text)
+    return {
+        "agentName": "Compliance",
+        "agentOrigin": "internal",
+        **compliance_agent_pipeline(summary_text)
+    }

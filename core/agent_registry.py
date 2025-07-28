@@ -18,13 +18,17 @@ from core.explainability_pipeline import explainability_agent_pipeline  # SHAP/L
 # =====================================
 # Agent Registry Dictionary
 # =====================================
+def debug_wrapper(summary):
+    print("🐒 DEBUG: agent_registry bureau key is calling this function from core.bureau_pipeline")
+    from core.bureau_pipeline import bureau_agent_pipeline
+    return bureau_agent_pipeline(summary)
 
 # Maps string keys to their respective pipeline functions.
 # Enables dynamic access and execution based on agent name.
 # Can be used like: `AGENT_PIPELINES["fraud"](summary_text)`
 
 AGENT_PIPELINES = {
-    "bureau": bureau_agent_pipeline,
+    "bureau": lambda: bureau_agent_pipeline(),
     "credit_scoring": credit_scoring_pipeline,
     "fraud": fraud_detection_pipeline,
     "compliance": compliance_agent_pipeline,

@@ -12,29 +12,32 @@ logger = logging.getLogger(__name__)
 
 class CreditRiskPlugin:
     @kernel_function(
-        description="Analyzes and summarizes business documents and financial statements",
-        name="bureau_analysis"
+    description="Analyzes and summarizes business documents and financial statements",
+    name="bureau_analysis"
     )
-    def bureau_analysis(self) -> str:
+    def bureau_analysis(self, summary_text: str) -> str:
         """Runs bureau agent pipeline and returns JSON result."""
         logger.info("Starting bureau_analysis function...")
         try:
-            logger.info("Calling bureau_agent_pipeline...")
-            result = bureau_agent_pipeline()
+            # Try to parse JSON if input is structured
+            if summary_text.startswith('{'):
+                try:
+                    data = json.loads(summary_text)
+                    actual_summary = data.get('summary', summary_text)
+                except:
+                    actual_summary = summary_text
+            else:
+                actual_summary = summary_text
+
+            logger.info(f"Calling bureau_agent_pipeline with summary: {actual_summary[:80]}...")
+            result = bureau_agent_pipeline(actual_summary)
+
             logger.info(f"Bureau pipeline result status: {result.get('status')}")
-            
-            if result.get("status") != "AgentStatus.complete":
-                error_msg = f"Bureau agent failed: {result.get('errorMessage')}"
-                logger.error(error_msg)
-                return json.dumps({"error": error_msg})
-            
-            logger.info(f"Bureau analysis completed successfully")
             return json.dumps(result)
-            
+
         except Exception as e:
             logger.error(f"Error in bureau_analysis: {str(e)}")
             return json.dumps({"error": str(e)})
-
     @kernel_function(
         description="Calculates credit risk and assigns AAA–DDD rating",
         name="credit_scoring"

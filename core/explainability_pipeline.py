@@ -9,7 +9,7 @@ import shap                 # SHAP for model interpretability
 import time                 # Sleep during async LLM wait
 import json                 # Formatting prompt and output
 import pandas as pd         # DataFrame construction
-from datetime import datetime  # For timestamping final output
+from datetime import datetime, timezone  # For timestamping final output
 from azure.identity import DefaultAzureCredential  # Azure credential management
 from azure.ai.projects import AIProjectClient       # Azure AI Agent project client
 
@@ -177,7 +177,7 @@ Overall, the model has assessed a moderate level of risk based on these inputs. 
             "confidence_reasoning": foundry_explanation or "No explanation from Foundry."
         },
         "summary": foundry_explanation[:300] + "..." if foundry_explanation else "N/A",
-        "completedAt": datetime.utcnow().isoformat() + "Z",
+        "completedAt": datetime.now(timezone.utc).isoformat(),
         "confidenceScore": 0.88,  # Placeholder value — can be made dynamic
         "status": "AgentStatus.complete",
         "errorMessage": None

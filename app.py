@@ -26,19 +26,6 @@ from utils.external_mcp_utils import (
     transform_external_output,
     format_external_summary
 )
-from flask import Flask, request, jsonify  # Flask web framework for API endpoints
-from core.bureau_pipeline import bureau_agent_pipeline  # Bureau summary pipeline
-from core.credit_pipeline import credit_scoring_pipeline  # Credit scoring pipeline
-from core.fraud_pipeline import fraud_detection_pipeline  # Fraud detection pipeline
-from core.compliance_pipeline import compliance_agent_pipeline  # Compliance checking pipeline
-from core.explainability_pipeline import explainability_agent_pipeline  # Explainability pipeline
-from core.smart_pipeline import run_smart_pipeline  # Smart controller pipeline (orchestrates all tools)
-import traceback  # For printing detailed error tracebacks in case of exceptions
-from core.blob_utils import upload_file_to_blob  # Utility for uploading files to Azure Blob Storage
-from mcp.validator import validate_input_against_schema, validate_output_against_schema  # Input/output schema validators
-import json  # For JSON serialization/deserialization
-import os  # For file path operations
-from core.agent_registry import AGENT_PIPELINES  # Central registry for all agent pipelines
 import asyncio  # For running asynchronous tasks
 from my_SemanticKernel.my_sk_orchestrator import SemanticKernelOrchestrator
 
@@ -245,8 +232,11 @@ def run_all_agents():
                 combined_results[agent_name] = {"error": "Invalid input", "details": input_errors}
                 continue
 
-            # Run pipeline
-            result = pipeline_fn(summary_text)
+            # Run pipeline differently for bureau_agent_pipeline (no args)
+            if agent_name == "bureau":
+                result = pipeline_fn()
+            else:
+                result = pipeline_fn(summary_text)
 
             # Validate output
             is_valid_output, output_errors = validate_output_against_schema(result, mcp["output_schema"])

@@ -18,4 +18,4 @@ azure-ai-projects
 gunicorn
 asyncio
 semantic-kernel
-json
+docx2txt

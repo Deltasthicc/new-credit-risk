@@ -166,7 +166,7 @@ def extract_fields(text):
 # Main Bureau Agent Orchestration
 # =====================================
 
-def bureau_agent_pipeline(summary: str = None):
+def bureau_agent_pipeline():
     """
     Reads structured data from summary2.json and builds a consistent output object for downstream agents.
     """
@@ -180,19 +180,19 @@ def bureau_agent_pipeline(summary: str = None):
         }
 
     try:
-        # --- Force annual_revenue to string to match schema ---
-        raw_revenue = bureau_output.get("annual_revenue")
-        annual_revenue_str = str(raw_revenue) if raw_revenue is not None else None
-
         fields = {
             "company_name": bureau_output.get("company_name"),
             "industry": bureau_output.get("industry"),
-            "annual_revenue": annual_revenue_str,
+            "annual_revenue": str(bureau_output.get("annual_revenue", "")),
             "employees": bureau_output.get("employees"),
             "years_in_business": bureau_output.get("years_in_business")
         }
 
-        key_metrics = bureau_output.get("key_financial_metrics", {})
+        key_metrics_raw = bureau_output.get("key_financial_metrics", {})
+        key_metrics = {
+            k: str(v) if isinstance(v, (int, float)) else v
+            for k, v in key_metrics_raw.items()
+        }
 
         raw_summary = bureau_output.get("summary", "").strip()
         if not raw_summary:
@@ -214,10 +214,9 @@ def bureau_agent_pipeline(summary: str = None):
 
     except Exception as e:
         return {
-            "errorMessage": f"Error parsing summary2.json content: {e}",
+            "errorMessage": f"Error parsing summary1.json content: {e}",
             "status": "AgentStatus.failed"
         }
-
 
 # =====================================
 # CLI Debug/Test Entry Point

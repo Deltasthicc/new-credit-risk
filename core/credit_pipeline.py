@@ -5,10 +5,13 @@
 import os                    # For file path handling (not used here, but common in pipelines)
 import re                    # For string and pattern parsing
 import json                  # To parse agent response as JSON
-from datetime import datetime  # To timestamp pipeline output
+from datetime import datetime, timezone  # To timestamp pipeline output
 from azure.identity import DefaultAzureCredential  # Azure credential setup
 from azure.ai.projects import AIProjectClient       # Azure AI Project client for managing agents
 from azure.ai.agents.models import ListSortOrder    # Sorts agent message threads
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from core.bureau_pipeline import bureau_agent_pipeline
 
 # =====================================
 # Safe Float Utility
@@ -104,6 +107,8 @@ def credit_scoring_pipeline(summary: str) -> dict:
         # Try parsing directly as valid JSON
         data = json.loads(output)
     except json.JSONDecodeError:
+        print("⚠️ JSON parsing failed. Falling back to line-by-line parsing.")
+        print("Raw output:\n", output)
         # If not valid JSON, fallback to manual parsing
         data = {}
         for line in output.splitlines():
@@ -142,8 +147,28 @@ def credit_scoring_pipeline(summary: str) -> dict:
             "market_position_score": safe_float(data.get("market_position_score"))
         },
         "summary": data.get("summary", ""),  # Human-readable explanation
-        "completedAt": datetime.utcnow().isoformat() + "Z",  # UTC timestamp
+        "completedAt": datetime.now(timezone.utc).isoformat(),  # UTC timestamp
         "confidenceScore": 0.89,  # Static score (could be dynamic based on LLM quality)
         "status": "AgentStatus.complete",
         "errorMessage": None
     }
+
+# =====================================
+# CLI Debug Entry Point
+# =====================================
+
+if __name__ == "__main__":
+    from bureau_pipeline import bureau_agent_pipeline
+
+    print("⏳ Running Bureau Summariser Agent...")
+    bureau_output = bureau_agent_pipeline()
+
+    if bureau_output["status"] != "AgentStatus.complete":
+        print("❌ Bureau agent failed:", bureau_output["errorMessage"])
+    else:
+        print("✅ Bureau summary received. Running credit scoring...")
+        summary_text = bureau_output["summary"]
+        credit_result = credit_scoring_pipeline(summary_text)
+        print("\n📊 Final Credit Scoring Output:")
+        print(json.dumps(credit_result, indent=2))
+

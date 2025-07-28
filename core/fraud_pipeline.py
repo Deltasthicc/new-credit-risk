@@ -7,7 +7,7 @@ import re                   # Regular expressions for extracting values
 import json                 # JSON formatting for LLM prompt
 import pandas as pd         # DataFrame creation for model input
 import joblib               # Model loading
-from datetime import datetime  # Timestamp for output
+from datetime import datetime, timezone  # Timestamp for output
 from azure.identity import DefaultAzureCredential  # Azure authentication
 from azure.ai.projects import AIProjectClient       # Azure AI Agent client
 
@@ -139,7 +139,7 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
             "document_authenticity": document_authenticity
         },
         "summary": ai_summary,
-        "completedAt": datetime.utcnow().isoformat() + "Z",
+        "completedAt": datetime.now(timezone.utc).isoformat(),
         "confidenceScore": round(proba.max(), 2),
         "status": "AgentStatus.complete",
         "errorMessage": None
@@ -160,3 +160,15 @@ if __name__ == "__main__":
     # Print formatted output
     print(json.dumps(fraud_data, indent=2))
     print("\nFraud Detection Pipeline Complete. Data saved to output_data folder.")
+
+if __name__ == "__main__":
+    # Read sample summary from rag_summary.txt
+    with open("output_data/rag_summary.txt", "r", encoding="utf-8") as f:
+        summary_text = f.read()
+
+    # Run the pipeline
+    result = fraud_detection_pipeline(summary_text)
+
+    # Pretty print the result
+    print(json.dumps(result, indent=2))
+    print("\n✅ Fraud Detection Pipeline Complete.")
