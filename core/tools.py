@@ -1,15 +1,14 @@
-# =======================
+# =====================================
 # Importing Core Pipelines
-# =======================
+# =====================================
 
 # Importing the main pipeline functions from each AI agent module
-# Each of these represents a key function of the credit risk & fraud detection system
 import os  # For file path operations
-import requests            # For making HTTP requests to external agents
-from core.credit_pipeline import credit_scoring_pipeline               # Generates credit risk score and limit recommendation
-from core.fraud_pipeline import fraud_detection_pipeline               # Detects potentially fraudulent behavior
-from core.explainability_pipeline import explainability_agent_pipeline # Explains AI decisions using techniques like SHAP
-from core.compliance_pipeline import compliance_agent_pipeline         # Validates decision against compliance/regulatory rules
+import requests  # For making HTTP requests to external agents
+from .credit_pipeline import credit_scoring_pipeline  # Generates credit risk score and limit recommendation
+from core.fraud_pipeline import fraud_detection_pipeline  # Detects potentially fraudulent behavior
+from core.explainability_pipeline import explainability_agent_pipeline  # Explains AI decisions using techniques like SHAP
+from core.compliance_pipeline import compliance_agent_pipeline  # Validates decision against compliance/regulatory rules
 
 # ============================
 # MCP External Agent Endpoints
@@ -48,7 +47,7 @@ def run_credit_tool(summary_text: str) -> dict:
     return {
         "agentName": "Credit Scoring",
         "agentOrigin": "internal",
-        **credit_scoring_pipeline(summary_text)
+        **credit_scoring_pipeline(summary_text)  # Keep this as is for local agent
     }
 
 
@@ -70,10 +69,13 @@ def run_fraud_tool(summary_text: str) -> dict:
             return response.json()
         except Exception as e:
             print(f"⚠️ External fraud agent failed: {e}. Falling back to local agent.")
+    
+    # For local agent (using MCP tool for fraud detection)
+    from core.tools.fraud_detection_tool import FraudDetectionTool  # Import the custom fraud tool
     return {
         "agentName": "Fraud Detection",
         "agentOrigin": "internal",
-        **fraud_detection_pipeline(summary_text)
+        **fraud_detection_pipeline(summary_text)  # Use MCP fraud detection pipeline
     }
 
 
@@ -90,7 +92,7 @@ def run_explainability_tool(summary_text: str) -> dict:
     return {
         "agentName": "Explainability",
         "agentOrigin": "internal",
-        **explainability_agent_pipeline(summary_text)
+        **explainability_agent_pipeline(summary_text)  # Assuming this is already handled
     }
 
 
@@ -107,5 +109,5 @@ def run_compliance_tool(summary_text: str) -> dict:
     return {
         "agentName": "Compliance",
         "agentOrigin": "internal",
-        **compliance_agent_pipeline(summary_text)
+        **compliance_agent_pipeline(summary_text)  # Assuming this is already handled
     }

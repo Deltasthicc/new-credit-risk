@@ -19,3 +19,5 @@ gunicorn
 asyncio
 semantic-kernel
 docx2txt
+ngrok
+fastmcp

@@ -1,5 +1,5 @@
 # =====================================
-# Fraud Detection Pipeline
+# Fraud Detection Pipeline (Restored Local Agent Logic)
 # =====================================
 
 import os                   # File path operations
@@ -7,10 +7,9 @@ import re                   # Regular expressions for extracting values
 import json                 # JSON formatting for LLM prompt
 import pandas as pd         # DataFrame creation for model input
 import joblib               # Model loading
-from datetime import datetime, timezone  # Timestamp for output
+from datetime import datetime  # Timestamp for output
 from azure.identity import DefaultAzureCredential  # Azure authentication
 from azure.ai.projects import AIProjectClient       # Azure AI Agent client
-
 
 # =====================================
 # Main Fraud Detection Function
@@ -27,33 +26,23 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
     - dict: Structured output with risk score, level, flagged items, AI summary, etc.
     """
 
-    # -------------------------------------
     # Load Pre-trained Fraud Detection Model
-    # -------------------------------------
     model_path = "agents/fraud_detection/fraud_model.joblib"
-    model = joblib.load(model_path)  # Load model from disk
+    model = joblib.load(model_path)
 
-    # -------------------------------------
-    # Utility: Extract numerical fields (e.g., Revenue, Equity) from summary
-    # Looks for format like: "Revenue: ₹20.3 B"
-    # -------------------------------------
+    # Utility: Extract numerical fields
     def extract_amount(field, text):
-        pattern = rf"{field}:\s*\$?₹?([\d.,]+)\s*B"  # Supports ₹ or $ followed by billions
+        pattern = rf"{field}:\s*\$?₹?([\d.,]+)\s*B"
         match = re.search(pattern, text, re.IGNORECASE)
         return float(match.group(1).replace(",", "")) * 1e9 if match else 0.0
 
-    # -------------------------------------
-    # Utility: Extract string fields (e.g., Industry, Country) from summary
-    # -------------------------------------
+    # Utility: Extract string fields
     def extract_string(field, text):
-        pattern = rf"{field}:\s*(.+)"  # Match "Field: Value" format
+        pattern = rf"{field}:\s*(.+)"
         match = re.search(pattern, text)
         return match.group(1).strip() if match else "Unknown"
 
-    # -------------------------------------
-    # Feature Extraction from Text Summary
-    # These values will be passed to the model for fraud prediction
-    # -------------------------------------
+    # Extract features from summary
     features = {
         "Revenue": extract_amount("Revenue", summary_text),
         "Net_Income": extract_amount("Net Income", summary_text),
@@ -64,19 +53,12 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
         "Country": extract_string("Country", summary_text)
     }
 
-    # Convert extracted features into a DataFrame as expected by the model
     df = pd.DataFrame([features])
 
-    # -------------------------------------
-    # Make Prediction Using Model
-    # -------------------------------------
-    prediction = model.predict(df)[0]             # Binary prediction (0 = legit, 1 = fraud)
-    proba = model.predict_proba(df)[0]            # Probabilities for each class
-    fraud_risk_score = round(proba[1], 2)         # Class 1 represents fraud risk probability
+    prediction = model.predict(df)[0]
+    proba = model.predict_proba(df)[0]
+    fraud_risk_score = round(proba[1], 2)
 
-    # -------------------------------------
-    # Determine Risk Level Based on Score
-    # -------------------------------------
     if fraud_risk_score > 0.7:
         risk_level = "High"
     elif fraud_risk_score > 0.3:
@@ -84,26 +66,17 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
     else:
         risk_level = "Low"
 
-    # -------------------------------------
-    # Simulated Document Authenticity Logic
-    # Just a heuristic for added insight in UI
-    # -------------------------------------
-    document_authenticity = round(1.0 - fraud_risk_score + 0.05, 2)  # Higher score = less fraud
+    document_authenticity = round(1.0 - fraud_risk_score + 0.05, 2)
     verification_status = "Verified" if document_authenticity >= 0.9 else "Needs Review"
     flagged_items = [] if fraud_risk_score < 0.3 else ["Unusual liabilities", "Equity mismatch"]
 
-    # =====================================
     # AI Explanation Using Azure Agent
-    # =====================================
-
-    # Connect to Azure AI Agent project
     project = AIProjectClient(
         credential=DefaultAzureCredential(),
         endpoint="https://akshitasurya.services.ai.azure.com/api/projects/CreditRiskAssessor"
     )
     agent = project.agents.get_agent("asst_jma5gWHJMxPQt271vldw4mwg")
 
-    # Prompt for LLM to explain the model's findings
     prompt = f"""
     You are a fraud analyst. Review the following features and risk score, and summarize the fraud risk:
 
@@ -116,18 +89,13 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
     Write a clear 1-2 sentence professional summary on fraud likelihood.
     """
 
-    # Start a conversation thread with the assistant
     thread = project.agents.threads.create()
     project.agents.messages.create(thread_id=thread.id, role="user", content=prompt)
     project.agents.runs.create_and_process(thread_id=thread.id, agent_id=agent.id)
 
-    # Retrieve the assistant's message (final summary)
     messages = list(project.agents.messages.list(thread_id=thread.id))
     ai_summary = next((m.text_messages[-1].text.value for m in messages if m.text_messages), "No response.")
 
-    # =====================================
-    # Final Structured Output
-    # =====================================
     return {
         "agentName": "Fraud Detection",
         "agentDescription": "Identifies potential fraud indicators and risk factors",
@@ -139,7 +107,7 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
             "document_authenticity": document_authenticity
         },
         "summary": ai_summary,
-        "completedAt": datetime.now(timezone.utc).isoformat(),
+        "completedAt": datetime.utcnow().isoformat() + "Z",
         "confidenceScore": round(proba.max(), 2),
         "status": "AgentStatus.complete",
         "errorMessage": None
@@ -149,26 +117,11 @@ def fraud_detection_pipeline(summary_text: str) -> dict:
 # CLI Debug/Test Entry Point
 # =====================================
 if __name__ == "__main__":
-    # Read sample summary from output_data/rag_summary.txt
     summary_path = os.path.join("output_data", "rag_summary.txt")
     with open(summary_path, "r", encoding="utf-8") as f:
         raw_summary = f.read()
 
-    # Run fraud detection pipeline on this summary
     fraud_data = fraud_detection_pipeline(raw_summary)
 
-    # Print formatted output
     print(json.dumps(fraud_data, indent=2))
     print("\nFraud Detection Pipeline Complete. Data saved to output_data folder.")
-
-if __name__ == "__main__":
-    # Read sample summary from rag_summary.txt
-    with open("output_data/rag_summary.txt", "r", encoding="utf-8") as f:
-        summary_text = f.read()
-
-    # Run the pipeline
-    result = fraud_detection_pipeline(summary_text)
-
-    # Pretty print the result
-    print(json.dumps(result, indent=2))
-    print("\n✅ Fraud Detection Pipeline Complete.")

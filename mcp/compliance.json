@@ -1,12 +1,10 @@
 {
-  "agent": "compliance",
-  "description": "Checks regulatory compliance and flags risks",
   "input_schema": {
     "type": "object",
     "properties": {
-      "summary": { "type": "string" }
+      "summary_text": { "type": "string" }
     },
-    "required": ["summary"]
+    "required": ["summary_text"]
   },
   "output_schema": {
     "type": "object",
