@@ -8,6 +8,7 @@ from azure.identity import DefaultAzureCredential  # Azure authentication
 from azure.ai.projects import AIProjectClient       # Main entry to interact with Azure AI project
 from azure.ai.agents.models import ListSortOrder    # Sort messages when reading agent replies
 from datetime import datetime              # For timestamping the output
+import re
 
 # =====================================
 # Azure AI Project Initialization
@@ -90,8 +91,11 @@ def compliance_agent_pipeline(summary_text: str) -> dict:
         if content.startswith("```json"):
             content = content.strip("```json").strip("`").strip()
 
-        # Parse the LLM's raw JSON reply
-        parsed = json.loads(content)
+        # 🔧 Clean malformed JSON (remove trailing commas)
+        cleaned = re.sub(r',\s*}', '}', content)
+        cleaned = re.sub(r',\s*]', ']', cleaned)
+        # Parse the cleaned JSON
+        parsed = json.loads(cleaned)
 
         return {
             "agentName": "Compliance",

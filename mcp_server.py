@@ -7,6 +7,7 @@ import time
 import os
 import requests
 import json
+from datetime import datetime
 
 # Import your actual agent pipelines
 from core.fraud_pipeline import fraud_detection_pipeline
@@ -19,6 +20,8 @@ app.config['SERVER_NAME'] = None  # Allow external access
 
 # Initialize FastMCP server
 mcp_server = FastMCP("credit_risk_mcp_server")
+# Set this dynamically if possible, else override manually
+NGROK_URL = "https://be2c4e1372e8.ngrok-free.app"
 
 # ==========================
 # Core Agent Pipeline Functions (calling your actual agents)
@@ -129,86 +132,6 @@ def compliance_logic(data):
         print(f"❌ Error in compliance agent: {str(e)}")
         return {"error": f"Compliance agent failed: {str(e)}"}
 
-def risk_assessment_logic(data):
-    """
-    Enhanced risk assessment that can call multiple agents and combine results
-    """
-    try:
-        # You can either create a dedicated risk assessment agent pipeline
-        # OR combine results from other agents for comprehensive risk analysis
-        
-        print(f"⚠️ Running comprehensive risk assessment...")
-        
-        # Option 1: If you have a dedicated risk assessment agent, call it
-        # risk_result = risk_assessment_pipeline(summary)
-        
-        # Option 2: Combine results from other agents for comprehensive risk
-        fraud_result = fraud_detection_logic(data)
-        credit_result = credit_scoring_logic(data)
-        compliance_result = compliance_logic(data)
-        
-        # Combine agent results into comprehensive risk assessment
-        risk_factors = []
-        risk_score = 50  # Base score
-        
-        # Analyze fraud risk
-        if isinstance(fraud_result, dict) and not fraud_result.get("error"):
-            if fraud_result.get("fraud_detected", False):
-                risk_factors.append("High fraud risk detected")
-                risk_score -= 30
-            elif fraud_result.get("confidence", 0) > 0.7:
-                risk_factors.append("Moderate fraud risk")
-                risk_score -= 15
-        
-        # Analyze credit risk
-        if isinstance(credit_result, dict) and not credit_result.get("error"):
-            credit_score = credit_result.get("score", 500)
-            if credit_score >= 750:
-                risk_score += 20
-                risk_factors.append("Excellent credit profile")
-            elif credit_score >= 650:
-                risk_score += 10
-                risk_factors.append("Good credit profile")
-            elif credit_score < 550:
-                risk_score -= 20
-                risk_factors.append("Poor credit profile")
-        
-        # Analyze compliance risk
-        if isinstance(compliance_result, dict) and not compliance_result.get("error"):
-            if not compliance_result.get("compliant", True):
-                risk_factors.append("Compliance issues identified")
-                risk_score -= 25
-            else:
-                risk_factors.append("Compliance requirements met")
-                risk_score += 10
-        
-        # Determine overall risk level
-        if risk_score >= 70:
-            risk_level = "Low"
-        elif risk_score >= 40:
-            risk_level = "Medium"
-        else:
-            risk_level = "High"
-        
-        result = {
-            "risk_score": max(0, min(100, risk_score)),
-            "risk_level": risk_level,
-            "risk_factors": risk_factors,
-            "agent_results": {
-                "fraud_analysis": fraud_result,
-                "credit_analysis": credit_result,
-                "compliance_analysis": compliance_result
-            },
-            "assessment_type": "agent_based_comprehensive"
-        }
-        
-        print(f"✅ Risk assessment result: {result}")
-        return result
-    
-    except Exception as e:
-        print(f"❌ Error in risk assessment: {str(e)}")
-        return {"error": f"Risk assessment failed: {str(e)}"}
-
 # ==========================
 # MCP Tools (these call the agent pipelines)
 # ==========================
@@ -227,11 +150,6 @@ def get_credit_score_result(data):
 def get_compliance_result(data):
     """MCP tool for compliance checking using agent pipeline"""
     return compliance_logic(data)
-
-@mcp_server.tool
-def risk_assessment_tool(data):
-    """MCP tool for comprehensive risk assessment using agent pipelines"""
-    return risk_assessment_logic(data)
 
 # ==========================
 # Middleware to handle ngrok headers
@@ -272,7 +190,7 @@ def options_handler(path=None):
 @app.route("/", methods=["GET"])
 def root_get():
     """Root endpoint for browser access via ngrok"""
-    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
+    ngrok_url = NGROK_URL
     return jsonify({
         "message": "🏦 Credit Risk MCP Server with AI Agents",
         "status": "online",
@@ -282,13 +200,11 @@ def root_get():
             "fraud_detection": "AI agent for fraud risk analysis",
             "credit_scoring": "AI agent for credit assessment",
             "compliance": "AI agent for regulatory compliance",
-            "risk_assessment": "Comprehensive risk analysis combining all agents"
         },
         "endpoints": {
             "POST /": "Comprehensive AI agent analysis",
             "POST /credit": "Credit scoring agent only",
             "POST /fraud": "Fraud detection agent only", 
-            "POST /risk": "Risk assessment combining all agents",
             "POST /compliance": "Compliance agent only",
             "GET /info": "Server information",
             "GET /health": "Health check"
@@ -309,7 +225,7 @@ def root_get():
 @app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint accessible via ngrok"""
-    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
+    ngrok_url = NGROK_URL
     return jsonify({
         "status": "healthy", 
         "service": "credit_risk_mcp_server_with_agents",
@@ -318,13 +234,13 @@ def health_check():
         "accessible_via_ngrok": True,
         "agents_loaded": True,
         "pipelines": ["fraud_detection", "credit_scoring", "compliance"],
-        "timestamp": "2025-07-31T00:00:00Z"
+        "timestamp": datetime.utcnow().isoformat() + "Z"
     })
 
 @app.route("/info", methods=["GET"])
 def server_info():
     """Get server information including ngrok URL"""
-    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
+    ngrok_url = NGROK_URL
     return jsonify({
         "service": "Credit Risk MCP Server with AI Agents",
         "version": "2.0.0",
@@ -334,14 +250,12 @@ def server_info():
             "fraud_detection_pipeline": "Active",
             "credit_scoring_pipeline": "Active",
             "compliance_agent_pipeline": "Active",
-            "risk_assessment": "Multi-agent combination"
         },
         "endpoints": {
             "comprehensive_analysis": "/",
             "fraud_detection": "/fraud",
             "credit_scoring": "/credit", 
             "compliance_check": "/compliance",
-            "risk_assessment": "/risk",
             "health_check": "/health",
             "server_info": "/info"
         },
@@ -389,9 +303,9 @@ def handle_request():
             return jsonify({
                 "message": "Credit Risk MCP Server with AI Agents",
                 "status": "ready",
-                "ngrok_url": "https://be2c4e1372e8.ngrok-free.app",
+                "ngrok_url": NGROK_URL,
                 "usage": "Send POST request with JSON data (summary or structured financial data)",
-                "sample_curl": "curl -X POST https://9bf5ebef422b.ngrok-free.app -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{\"summary\": \"Company with ₹2.5B Revenue, ₹0.2B Net Income, ₹3B Total Assets. Industry: IT Services. Country: India.\"}'"
+                "sample_curl": f"curl -X POST {NGROK_URL} -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company with ₹2.5B Revenue, ₹0.2B Net Income, ₹3B Total Assets. Industry: IT Services. Country: India.\"}}'"
             }), 200
         
         data = request.get_json()
@@ -407,10 +321,9 @@ def handle_request():
             "fraud_detection": fraud_detection_logic(data),
             "credit_scoring": credit_scoring_logic(data),
             "compliance": compliance_logic(data),
-            "risk_assessment": risk_assessment_logic(data),
-            "timestamp": "2025-07-31T00:00:00Z",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "processed_via": "ai_agents_via_ngrok",
-            "ngrok_url": "https://be2c4e1372e8.ngrok-free.app",
+            "ngrok_url": NGROK_URL,
             "processing_method": "agent_pipelines",
             "input_data": data
         }
@@ -457,19 +370,6 @@ def compliance_only():
     except Exception as e:
         print(f"❌ Compliance agent error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-@app.route("/risk", methods=["POST"])
-def risk_only():
-    """Route for comprehensive risk assessment using all agents"""
-    try:
-        data = request.get_json()
-        print(f"⚠️ Running comprehensive risk assessment...")
-        result = risk_assessment_logic(data)
-        return jsonify(result)
-    except Exception as e:
-        print(f"❌ Risk assessment error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
 # ==========================
 # Ngrok Integration
 # ==========================
@@ -535,38 +435,37 @@ if __name__ == "__main__":
     print("🏦 CREDIT RISK MCP SERVER WITH AI AGENTS READY")
     print("="*70)
     print(f"🏠 Local URL:       http://localhost:5000")
-    print(f"🌐 Ngrok URL:       https://9bf5ebef422b.ngrok-free.app")
+    print(f"🌐 Ngrok URL:       {NGROK_URL}")
     print(f"📊 Ngrok Dashboard: http://localhost:4040")
     print(f"🤖 AI Agents:       fraud_detection, credit_scoring, compliance")
     
     print(f"\n🌍 YOUR AI AGENTS ARE NOW ACCESSIBLE WORLDWIDE VIA NGROK!")
-    print(f"🔗 Direct browser access: https://9bf5ebef422b.ngrok-free.app")
-    print(f"📋 Test API endpoint:     https://9bf5ebef422b.ngrok-free.app/info")
+    print(f"🔗 Direct browser access: {NGROK_URL}")
+    print(f"📋 Test API endpoint:     {NGROK_URL}/info")
     
     print(f"\n📋 Test your AI agents with these commands:")
     print(f"# Test with summary format (recommended):")
-    print(f"curl -X POST https://9bf5ebef422b.ngrok-free.app \\")
+    print(f"curl -X POST {NGROK_URL} \\")
     print(f"  -H 'Content-Type: application/json' \\")
     print(f"  -H 'ngrok-skip-browser-warning: true' \\")
     print(f"  -d '{{\"summary\": \"XYZ Ltd. is a fintech company with ₹2.5B Revenue, ₹0.2B Net Income, ₹3B Total Assets. Industry: IT Services. Country: India.\"}}'")
     
     print(f"\n# Test with structured data:")
-    print(f"curl -X POST https://9bf5ebef422b.ngrok-free.app \\")
+    print(f"curl -X POST {NGROK_URL} \\")
     print(f"  -H 'Content-Type: application/json' \\")
     print(f"  -H 'ngrok-skip-browser-warning: true' \\")
     print(f"  -d '{{\"Revenue\": 2500000000, \"Net_Income\": 200000000, \"Total_Assets\": 3000000000, \"Industry\": \"IT Services\", \"Country\": \"India\"}}'")
     
     print(f"\n🎯 Test individual AI agents:")
-    print(f"curl -X POST https://9bf5ebef422b.ngrok-free.app/fraud -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
-    print(f"curl -X POST https://9bf5ebef422b.ngrok-free.app/credit -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
-    print(f"curl -X POST https://9bf5ebef422b.ngrok-free.app/compliance -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
+    print(f"curl -X POST {NGROK_URL}/fraud -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
+    print(f"curl -X POST {NGROK_URL}/credit -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
+    print(f"curl -X POST {NGROK_URL}/compliance -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{{\"summary\": \"Company summary here\"}}'")
     
     print(f"\n🔍 Available endpoints:")
     print(f"  POST /           - All AI agents (comprehensive analysis)")
     print(f"  POST /fraud      - Fraud detection AI agent only")
     print(f"  POST /credit     - Credit scoring AI agent only")
     print(f"  POST /compliance - Compliance AI agent only")
-    print(f"  POST /risk       - Multi-agent risk assessment")
     print(f"  GET  /health     - Health check with agent status")
     print(f"  GET  /info       - Complete server and agent information")
     print("="*70)
