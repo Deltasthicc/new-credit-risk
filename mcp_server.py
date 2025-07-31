@@ -272,7 +272,7 @@ def options_handler(path=None):
 @app.route("/", methods=["GET"])
 def root_get():
     """Root endpoint for browser access via ngrok"""
-    ngrok_url = "https://9bf5ebef422b.ngrok-free.app"
+    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
     return jsonify({
         "message": "🏦 Credit Risk MCP Server with AI Agents",
         "status": "online",
@@ -309,7 +309,7 @@ def root_get():
 @app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint accessible via ngrok"""
-    ngrok_url = "https://9bf5ebef422b.ngrok-free.app"
+    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
     return jsonify({
         "status": "healthy", 
         "service": "credit_risk_mcp_server_with_agents",
@@ -324,7 +324,7 @@ def health_check():
 @app.route("/info", methods=["GET"])
 def server_info():
     """Get server information including ngrok URL"""
-    ngrok_url = "https://9bf5ebef422b.ngrok-free.app"
+    ngrok_url = "https://be2c4e1372e8.ngrok-free.app"
     return jsonify({
         "service": "Credit Risk MCP Server with AI Agents",
         "version": "2.0.0",
@@ -389,7 +389,7 @@ def handle_request():
             return jsonify({
                 "message": "Credit Risk MCP Server with AI Agents",
                 "status": "ready",
-                "ngrok_url": "https://9bf5ebef422b.ngrok-free.app",
+                "ngrok_url": "https://be2c4e1372e8.ngrok-free.app",
                 "usage": "Send POST request with JSON data (summary or structured financial data)",
                 "sample_curl": "curl -X POST https://9bf5ebef422b.ngrok-free.app -H 'Content-Type: application/json' -H 'ngrok-skip-browser-warning: true' -d '{\"summary\": \"Company with ₹2.5B Revenue, ₹0.2B Net Income, ₹3B Total Assets. Industry: IT Services. Country: India.\"}'"
             }), 200
@@ -410,7 +410,7 @@ def handle_request():
             "risk_assessment": risk_assessment_logic(data),
             "timestamp": "2025-07-31T00:00:00Z",
             "processed_via": "ai_agents_via_ngrok",
-            "ngrok_url": "https://9bf5ebef422b.ngrok-free.app",
+            "ngrok_url": "https://be2c4e1372e8.ngrok-free.app",
             "processing_method": "agent_pipelines",
             "input_data": data
         }
